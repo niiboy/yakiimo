@@ -18,24 +18,32 @@ class ButtleSystem():
 
     def dice_roll(self, face, times):
         dice = Dice(face)
-        return [dice.roll() for i in range(times)]
+        result = [dice.roll() for i in range(times)]
+        print(f"dice roll results is {result}")
+        return result
+
+    def judge(self):
+        hero_tech = self.hero.get_tech_pt() + sum(self.dice_roll(6, 2))
+        print(f"hero has {hero_tech} tech pt.")
+
+        enemy_tech = self.enemy.get_tech_pt() + sum(self.dice_roll(6, 2))
+        print(f"enemy has {enemy_tech} tech pt.")
+
+        if hero_tech < enemy_tech:
+            print("hero has damage")
+            self.hero.get_damage()
+        elif enemy_tech < hero_tech:
+            print("enemy has damage")
+            self.enemy.get_damage()
+        else:
+            print("dorrow!")
+
+        print("")
 
     def buttle(self):
-        tmp_record = {}
+        while min(self.hero.get_hp(), self.enemy.get_hp()) > 0:
+            self.judge()
 
-        # なんか書く
-        # for player in self.players:
-        #     status = player.get_status()
-        #     tmp_tech_pt = status["tech_pt"]
-
-        #     dice_resutls = self.dice_roll(face=6, times=2)
-        #     tmp_tech_pt += sum(dice_resutls)
-        #     tmp_record[status["name"]] = tmp_tech_pt
-
-
-
-        # return tmp_record
-        pass
 
 class Player():
     def __init__(self, name):
@@ -43,7 +51,7 @@ class Player():
         self.status = self._input_status()
 
     def _input_status(self):
-        l = input("input status {}. hp, tech_pt >>".format(self.name)).split()
+        l = input(f"input status {self.name}. hp, tech_pt >> ").split()
         if len(l) != 2:
             raise ValueError("invalid value!")
 
@@ -65,6 +73,9 @@ class Player():
 
     def get_damage(self):
         self.status["hp"] -= 2
+        print(f"{self.name} has {self.status['hp']} hp!")
+        if self.status["hp"] <= 0:
+            print(f"{self.name} has dead!")
 
 
 def nake_players():
