@@ -18,36 +18,40 @@ class ButtleSystem():
         self.enemy = players[1]
         self.luck_mode = option.luck
         self.slow_mode = option.slow
+        self.utils = Utils()
 
-    def dice_roll(self, face, times):
-        dice = Dice(face)
-        result = [dice.roll() for i in range(times)]
-        print(f"dice roll results is {result}")
-        return result
+    def check_luck_pt(self):
+        pass
 
-    def judge(self):
-        hero_tech = self.hero.get_tech_pt() + sum(self.dice_roll(6, 2))
-        print(f"hero has {hero_tech} tech pt.")
-
-        enemy_tech = self.enemy.get_tech_pt() + sum(self.dice_roll(6, 2))
-        print(f"enemy has {enemy_tech} tech pt.")
-
+    def judge_looser(self, hero_tech, enemy_tech):
         if hero_tech < enemy_tech:
             print("hero has damage!")
-            self.hero.get_damage()
+            return self.hero
+
         elif enemy_tech < hero_tech:
             print("enemy has damage")
-            self.enemy.get_damage()
+            return self.enemy
+
         else:
             print("draw!\n")
-
+            return None
 
     def buttle(self):
         while min(self.hero.get_hp(), self.enemy.get_hp()) > 0:
-            self.judge()
+            hero_tech = self.hero.get_tech_pt() + sum(self.utils.dice_roll(6, 2))
+            print(f"hero has {hero_tech} tech pt.")
+
+            enemy_tech = self.enemy.get_tech_pt() + sum(self.utils.dice_roll(6, 2))
+            print(f"enemy has {enemy_tech} tech pt.")
+
+            looser = self.judge_looser(hero_tech, enemy_tech)
+            if looser is None:
+                continue
+            looser.get_damage(2)
+            looser.check_dead()
+
             if self.slow_mode is True:
                 sleep(2)
-
 
 
 class Player():
@@ -83,39 +87,60 @@ class Player():
     def get_status(self):
         return self.status
 
-    def get_damage(self):
-        self.status["hp"] -= 2
-        print(f"{self.name} has {self.status['hp']} hp!\n")
+    def check_dead(self):
         if self.status["hp"] <= 0:
             print(f"{self.name} has dead!")
 
+    def get_damage(self, damage):
+        self.status["hp"] -= damage
+        print(f"{self.name} has {self.status['hp']} hp!\n")
 
-def nake_players():
-    players = []
-    hero = Player("hero")
-    enemy = Player("enemy")
-    players.append(hero)
-    players.append(enemy)
-    return players
 
-def get_option():
-    argparser = ArgumentParser()
-    argparser.add_argument('-s', '--slow',
-                            action="store_true",
-                            help='use slow mode.')
+class Utils():
+    def __init__(self):
+        pass
 
-    argparser.add_argument('-l', '--luck',
-                            action="store_true",
-                            help='confirm the luck point.')
+    def make_players(self):
+        players = []
+        hero = Player("hero")
+        enemy = Player("enemy")
+        players.append(hero)
+        players.append(enemy)
+        return players
 
-    return argparser.parse_args()
+    def get_option(self):
+        argparser = ArgumentParser()
+        argparser.add_argument('-s', '--slow',
+                                action="store_true",
+                                help='use slow mode.')
+
+        argparser.add_argument('-l', '--luck',
+                                action="store_true",
+                                help='confirm the luck point.')
+
+        argparser.add_argument('-dr', '--diceroll',
+                                action="store_true",
+                                help='confirm the luck point.')
+
+        return argparser.parse_args()
+
+    def dice_roll(self, face, times):
+        dice = Dice(face)
+        result = [dice.roll() for i in range(times)]
+        print(f"dice roll results is {result}")
+        return result
+
 
 def main():
-    option = get_option()
-    players = nake_players()
+    utils = Utils()
+    option = utils.get_option()
+    if option.diceroll is True:
+        utils.dice_roll(face=6, times=2)
+        sys.exit()
+
+    players = utils.make_players()
     buttle_system = ButtleSystem(players, option)
     buttle_system.buttle()
-
 
 if __name__=="__main__":
     main()
