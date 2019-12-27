@@ -20,38 +20,89 @@ class ButtleSystem():
         self.slow_mode = option.slow
         self.utils = Utils()
 
-    def check_luck_pt(self):
-        pass
-
-    def judge_looser(self, hero_tech, enemy_tech):
+    def judge_loser(self, hero_tech, enemy_tech):
         if hero_tech < enemy_tech:
             print("hero has damage!")
             return self.hero
 
         elif enemy_tech < hero_tech:
-            print("enemy has damage")
+            print("enemy has damage!")
             return self.enemy
 
         else:
             print("draw!\n")
             return None
 
+    def judge_good_luck(self):
+        luck_pt = self.hero.set_luck_pt()
+        util = Utils()
+        result = util.dice_roll(face=6, times=2)
+        if sum(result) <= luck_pt:
+            print("Succes!")
+            return True
+        else:
+            print("Falied...")
+            return False
+
+    def caluclate_tech_pt(self):
+        hero_tech = self.hero.get_tech_pt() + sum(self.utils.dice_roll(6, 2))
+        print(f"hero has {hero_tech} tech pt.")
+
+        enemy_tech = self.enemy.get_tech_pt() + sum(self.utils.dice_roll(6, 2))
+        print(f"enemy has {enemy_tech} tech pt.")
+        return hero_tech, enemy_tech
+
+    def confirm_to_use_luck(self):
+        while True:
+            answer = input(f"Do you use luck point? [y]/[n] >>")
+            if answer == "y":
+                print("use luck point!")
+                return True
+            elif answer == "n":
+                return False
+            else:
+                print("please enter [y]/[n]")
+
+    def ajust_damage(self, loser):
+        damage = 2
+        if loser.name == "hero":
+            if self.judge_good_luck():
+                damage -= 1
+            else:
+                damage += 1
+        if loser.name == "enemy":
+            if self.judge_good_luck():
+                damage += 2
+            else:
+                damage -= 1
+        print(f"damage is {damage}")
+        return damage
+
+
     def buttle(self):
+        counter = 1
         while min(self.hero.get_hp(), self.enemy.get_hp()) > 0:
-            hero_tech = self.hero.get_tech_pt() + sum(self.utils.dice_roll(6, 2))
-            print(f"hero has {hero_tech} tech pt.")
+            print(f"{counter} turn: \n")
+            hero_tech, enemy_tech = self.caluclate_tech_pt()
+            loser = self.judge_loser(hero_tech, enemy_tech)
 
-            enemy_tech = self.enemy.get_tech_pt() + sum(self.utils.dice_roll(6, 2))
-            print(f"enemy has {enemy_tech} tech pt.")
-
-            looser = self.judge_looser(hero_tech, enemy_tech)
-            if looser is None:
+            if loser is None:
                 continue
-            looser.get_damage(2)
-            looser.check_dead()
+            print(f"hero has hp:{self.hero.get_hp()}")
+            print(f"enemy has hp:{self.enemy.get_hp()}")
 
-            if self.slow_mode is True:
-                sleep(2)
+            damage = 2
+            if self.luck_mode is True:
+                use_luck = self.confirm_to_use_luck()
+                if use_luck is True:
+                    damage = self.ajust_damage(loser)
+                else:
+                    damage = 2
+
+            loser.get_damage(damage)
+            loser.check_dead()
+            sleep(3)
+            counter += 1
 
 
 class Player():
@@ -71,12 +122,16 @@ class Player():
 
         return status
 
-    def set_luck(self):
+    def set_luck_pt(self):
         l = input(f"input status {self.name}. luck point >> ")
         self.status["luck"] = int(l)
+        return self.status["luck"]
 
     def loss_luck(self):
         self.status["luck"] -= 1
+
+    def get_luck_pt(self):
+        return self.status["luck"]
 
     def get_hp(self):
         return self.status["hp"]
@@ -116,11 +171,11 @@ class Utils():
 
         argparser.add_argument('-l', '--luck',
                                 action="store_true",
-                                help='confirm the luck point.')
+                                help='confirm to use the luck point.')
 
         argparser.add_argument('-dr', '--diceroll',
                                 action="store_true",
-                                help='confirm the luck point.')
+                                help='dice roll.')
 
         return argparser.parse_args()
 
